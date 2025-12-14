@@ -1,34 +1,16 @@
 version: '3.8'
 
 services:
-  db:
+  mysql:
     image: mysql:8.0
     container_name: realworld_drf_mysql
-    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
     ports:
-      - "7749:3306"
+      - "${DB_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    networks:
-      - realworld_drf_network
-
-  api:
-    build: .
-    container_name: realworld_drf_api
-    restart: unless-stopped
-    depends_on:
-      - db
-    # Sử dụng file .env để cấu hình biến môi trường
-    env_file:
-      - .env
-    ports:
-      - "5525:8000"
-    # Mount code từ máy (.) vào container (/app)
-    volumes:
-      - .:/app
     networks:
       - realworld_drf_network
 
