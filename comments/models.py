@@ -14,7 +14,7 @@ class Comment(CoreModel):
     author = models.ForeignKey(
         "users.User",
         related_name="comments",
-        on_delete=models.CASCADE,
+        on_delete=models.RESTRICT,
         db_column="author_id",
         null=True,
     )
