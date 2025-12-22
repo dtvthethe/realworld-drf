@@ -24,13 +24,11 @@ class Article(CoreModel):
     favorites = models.ManyToManyField(
         "users.User",
         related_name="favorite_articles",
-        null=True,
         db_table="favorite_articles",
     )
     tags = models.ManyToManyField(
         "tags.Tag",
         related_name="article_tags",
-        null=True,
         db_table="article_tags",
     )
 
