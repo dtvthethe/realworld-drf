@@ -4,9 +4,11 @@ import articles.constants as constants
 
 
 class Article(CoreModel):
+    STATUS_DRAFT = 1
+    STATUS_PUBLISHED = 2
     STATUS_CHOICES = (
-        (1, 'Draft'),
-        (2, 'Published'),
+        (STATUS_DRAFT, 'Draft'),
+        (STATUS_PUBLISHED, 'Published'),
     )
 
     title = models.CharField(max_length=constants.TITLE_MAX_LENGTH)
