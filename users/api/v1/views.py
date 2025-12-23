@@ -18,8 +18,21 @@ class UserViewSet(GenericViewSet):
 
         # nếu data không hợp lệ, raise exception
         serializer.is_valid(raise_exception=True)
+
+        # gọi serializer.create() để lưu user vào db
         user = serializer.save()
 
         response_data = UserRegisterSerializer(user).data
 
         return Response({"user": response_data})
+
+
+class ProfileViewSet(GenericViewSet):
+    queryset = User.objects.all()
+    # mạc định là id, đổi sang username
+    lookup_field = "username"
+
+    def retrieve(self, request, username=None):
+        user = self.get_object()
+        serializer = self.get_serializer(user)
+        return Response({"user": serializer.data})
