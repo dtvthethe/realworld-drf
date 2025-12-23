@@ -53,3 +53,14 @@ class UserRegisterSerializer(serializers.Serializer):
             image=validated_data.get("image", ""),
         )
         return user
+
+
+class ProfileResponseSerializer(serializers.Serializer):
+    username = serializers.CharField(read_only=True)
+    bio = serializers.CharField(read_only=True)
+    image = serializers.URLField(read_only=True)
+    following = serializers.SerializerMethodField()
+
+    def get_following(self, obj):
+        # TODO: implement following logic
+        return False
