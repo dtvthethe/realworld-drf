@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Q, F
 from core.models import CoreModel
 import users.constants as constants
+from django.contrib.auth.hashers import make_password, check_password
 
 
 class User(CoreModel):
@@ -10,6 +11,14 @@ class User(CoreModel):
     password = models.CharField(max_length=constants.PASSWORD_MAX_LENGTH)
     bio = models.CharField(max_length=constants.BIO_MAX_LENGTH, null=True)
     image = models.CharField(max_length=constants.IMAGE_MAX_LENGTH, null=True)
+
+    # mã hóa password
+    def set_password(self, input):
+        self.password = make_password(input)
+
+    # kiểm tra password đúng hay không
+    def check_password(self, input):
+        return check_password(input, self.password)
 
     # ko dùng cái này thay bằng Following model bên dưới
     # user.following.all()   # mình follow ng khác
@@ -24,6 +33,7 @@ class User(CoreModel):
 
     class Meta:
         db_table = "users"
+
 
 # TODO: chưa hiểu lắm, khi code cần tìm hiểu thêm
 class Following(models.Model):
@@ -52,6 +62,7 @@ class Following(models.Model):
         followee=target_user
     ).exists()
     """
+
     follower = models.ForeignKey(
         User,
         related_name="following",
@@ -75,5 +86,5 @@ class Following(models.Model):
             models.CheckConstraint(
                 condition=~Q(follower=F("followee")),
                 name="prevent_self_follow",
-            )
+            ),
         ]

@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import timedelta
 
 # Load .env file
 import environ
@@ -101,3 +102,26 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+}
+
+SIMPLE_JWT = {
+    # access token (dùng để auth)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+
+    # refresh token (dùng để  cấp access token mới)
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),
+
+    # TODO: cần xem lại phần này
+    # cấp refresh token mới mỗi lần refresh
+    "ROTATE_REFRESH_TOKENS": True,
+    # TODO: cần xem lại phần này
+    # vô hiệu hóa refresh token cũ sau khi cấp mới
+    "BLACKLIST_AFTER_ROTATION": True,
+
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
