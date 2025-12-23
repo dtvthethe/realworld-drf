@@ -6,19 +6,23 @@ from ...models import Article
 
 class CreateArticleSerializer(serializers.Serializer):
     title = serializers.CharField(
-        max_length=TITLE_MAX_LENGTH, min_length=10, allow_blank=False, required=True
-    )
-    description = serializers.CharField(
-        max_length=DESCRIPTION_MAX_LENGTH,
-        min_length=10,
+        max_length=TITLE_MAX_LENGTH,
+        min_length=TITLE_MIN_LENGTH,
         allow_blank=False,
         required=True,
     )
-    body = serializers.CharField(min_length=10, allow_blank=False, required=True)
-    status = serializers.IntegerField(
-        min_value=Article.STATUS_DRAFT,
-        max_value=Article.STATUS_PUBLISHED,
-        default=Article.STATUS_DRAFT,
+    description = serializers.CharField(
+        max_length=DESCRIPTION_MAX_LENGTH,
+        min_length=DESCRIPTION_MIN_LENGTH,
+        allow_blank=False,
+        required=True,
+    )
+    body = serializers.CharField(
+        min_length=BODY_MIN_LENGTH, allow_blank=False, required=True
+    )
+    status = serializers.ChoiceField(
+        choices=STATUS_CHOICES,
+        default=STATUS_DRAFT,
     )
 
     # TODO: save author
