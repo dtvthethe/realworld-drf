@@ -109,9 +109,12 @@ REST_FRAMEWORK = {
     ),
 }
 
+# để  Django biết dùng model là User custom thay vì model User mặc định
+AUTH_USER_MODEL = "users.User"
+
 SIMPLE_JWT = {
     # access token (dùng để auth)
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
 
     # refresh token (dùng để  cấp access token mới)
     "REFRESH_TOKEN_LIFETIME": timedelta(days=2),
