@@ -10,6 +10,7 @@ from .serializers import (
     ProfileResponseSerializer,
     UserLoginResponseSerializer,
     UserLoginSerializer,
+    UserUpdateSerializer,
 )
 
 
@@ -91,6 +92,28 @@ class CurrentUserViewSet(GenericViewSet):
     def retrieve(self, request):
         try:
             user = request.user
+            response_data = CurrentUserResponseSerializer(user).data
+
+            return Response({"user": response_data}, status=HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"errors": e.detail},
+                status=HTTP_400_BAD_REQUEST,
+            )
+
+    # vì ko có pk nên phải khai báo riêng trong urls.py
+    def update(self, request):
+        try:
+            user = request.user
+            user_data = request.data.get("user", {})
+            serializer = UserUpdateSerializer(
+                user,
+                data=user_data,
+                partial=True,  # cho phép cập nhật 1 phần
+            )
+            serializer.is_valid(raise_exception=True)
+            user = serializer.save()
+
             response_data = CurrentUserResponseSerializer(user).data
 
             return Response({"user": response_data}, status=HTTP_200_OK)
