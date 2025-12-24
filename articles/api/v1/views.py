@@ -23,7 +23,7 @@ class ArticleViewSet(GenericViewSet):
 
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
         except Exception as e:
-            return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, slug=None):
         try:
@@ -34,7 +34,7 @@ class ArticleViewSet(GenericViewSet):
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
             # return Response({"article": {}}, status=HTTP_200_OK)
         except Exception as e:
-            return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
 
     def list(self, request):
         try:
@@ -70,4 +70,4 @@ class ArticleViewSet(GenericViewSet):
                 status=HTTP_200_OK,
             )
         except Exception as e:
-            return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)

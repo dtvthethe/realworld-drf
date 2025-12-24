@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 from ...constants import *
 from ...models import User
 
@@ -45,13 +46,19 @@ class UserRegisterSerializer(serializers.Serializer):
 
     # lưu user vào db
     def create(self, validated_data):
+        # tạo object User
         user = User.objects.create(
             username=validated_data["username"],
             email=validated_data["email"],
-            password=validated_data["password"],
+            # password=validated_data["password"],
             bio=validated_data.get("bio", ""),
             image=validated_data.get("image", ""),
         )
+        # mã hóa password
+        user.set_password(validated_data["password"])
+        # lưu user vào db
+        user.save()
+
         return user
 
 
@@ -64,3 +71,54 @@ class ProfileResponseSerializer(serializers.Serializer):
     def get_following(self, obj):
         # TODO: implement following logic
         return False
+
+
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(
+        allow_blank=False,
+        required=True,
+    )
+    password = serializers.CharField(
+        allow_blank=False,
+        required=True,
+        write_only=True,
+    )
+
+    def validate(self, data):
+        email = data.get("email", "")
+        pwd = data.get("password", "")
+
+        user = User.objects.filter(email=email).first()
+
+        if user is None:
+            raise serializers.ValidationError({"email": "Email not found"})
+
+        if not user.check_password(pwd):
+            raise serializers.ValidationError({"password": "Password is incorrect"})
+
+        # tạo token và refresh token
+        refresh = RefreshToken.for_user(user)
+
+        # lấy access token
+        token = str(refresh.access_token)
+
+        # lấy refresh token
+        refresh_token = str(refresh)
+
+        return {
+            "email": user.email,
+            "username": user.username,
+            "bio": user.bio,
+            "image": user.image,
+            "token": token,
+            "refresh_token": refresh_token,
+        }
+
+
+class UserLoginResponseSerializer(serializers.Serializer):
+    email = serializers.CharField(read_only=True)
+    username = serializers.CharField(read_only=True)
+    bio = serializers.CharField(read_only=True)
+    image = serializers.URLField(read_only=True)
+    token = serializers.CharField(read_only=True)
+    refresh_token = serializers.CharField(read_only=True)
