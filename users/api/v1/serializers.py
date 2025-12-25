@@ -125,3 +125,47 @@ class CurrentUserResponseSerializer(serializers.Serializer):
 class UserLoginResponseSerializer(CurrentUserResponseSerializer):
     token = serializers.CharField(read_only=True)
     refresh_token = serializers.CharField(read_only=True)
+
+
+class UserUpdateSerializer(serializers.Serializer):
+    password = serializers.CharField(
+        min_length=PASSWORD_MIN_LENGTH,
+        max_length=PASSWORD_MAX_LENGTH,
+        allow_blank=False,
+        required=False,
+        write_only=True,
+    )
+    bio = serializers.CharField(
+        max_length=BIO_MAX_LENGTH,
+        allow_blank=True,
+        required=False,
+    )
+    image = serializers.URLField(
+        max_length=IMAGE_MAX_LENGTH,
+        allow_blank=True,
+        required=False,
+    )
+
+    # lưu user vào db
+    # instance: user hiện tại
+    # validated_data: dữ liệu input đã được validate
+    def update(self, instance, validated_data):
+        is_changed = False
+
+        if "password" in validated_data:
+            instance.set_password(validated_data["password"])
+            is_changed = True
+
+        if "bio" in validated_data:
+            instance.bio = validated_data["bio"]
+            is_changed = True
+
+        if "image" in validated_data:
+            instance.image = validated_data["image"]
+            is_changed = True
+
+        if is_changed:
+            instance.save()
+            return instance
+
+        return instance
