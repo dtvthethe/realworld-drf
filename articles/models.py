@@ -16,6 +16,9 @@ class Article(CoreModel):
         db_column="author_id",
         null=True,
     )
+
+    # Many to Many có các functions:
+    # add(), remove(), clear(), set(), all(), count(), exists()
     favorites = models.ManyToManyField(
         "users.User",
         related_name="favorite_articles",
