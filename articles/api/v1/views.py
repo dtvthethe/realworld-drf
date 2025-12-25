@@ -1,22 +1,33 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.permissions import IsAuthenticated
 from ...models import Article
 from .serializers import CreateArticleSerializer, ResponseArticleSerializer
+from ...constants import LIST_LIMIT_DEFAULT
 
 
 class ArticleViewSet(GenericViewSet):
-    LIST_LIMIT_DEFAULT = 10
-
     queryset = Article.objects.all()
-    serializer_class = CreateArticleSerializer
+    # serializer_class = CreateArticleSerializer
+
     # mạc định là id, thay đổi thành slug
     lookup_field = "slug"
+
+    # nếu chỉ có vài action cần verify token thì override hàm này
+    def get_permissions(self):
+        if self.action in ["create"]:
+            return [IsAuthenticated()]
+        return []
 
     def create(self, request):
         try:
             article_data = request.data.get("article", {})
-            serializer = self.get_serializer(data=article_data)
+            # serializer = self.get_serializer(data=article_data)
+            serializer = CreateArticleSerializer(
+                data=article_data,
+                context={"request": request}, # truyền request vào context để sử dụng trong serializer
+            )
             serializer.is_valid(raise_exception=True)
             article = serializer.save()
             response_serializer = ResponseArticleSerializer(article)

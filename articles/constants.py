@@ -10,3 +10,4 @@ STATUS_CHOICES = (
     (STATUS_DRAFT, 'Draft'),
     (STATUS_PUBLISHED, 'Published'),
 )
+LIST_LIMIT_DEFAULT = 10
