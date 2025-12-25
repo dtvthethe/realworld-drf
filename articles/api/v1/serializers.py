@@ -70,8 +70,7 @@ class ResponseArticleSerializer(serializers.Serializer):
         return False
 
     def get_favoritesCount(self, article):
-        # TODO: implement favorited
-        return 0
+        return article.favorites.count()
 
     def get_tagList(self, article):
         # flat=False: <QuerySet [{'name': 'Django'}, {'name': 'Python'}...]>
