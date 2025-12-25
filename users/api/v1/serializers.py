@@ -115,10 +115,13 @@ class UserLoginSerializer(serializers.Serializer):
         }
 
 
-class UserLoginResponseSerializer(serializers.Serializer):
+class CurrentUserResponseSerializer(serializers.Serializer):
     email = serializers.CharField(read_only=True)
     username = serializers.CharField(read_only=True)
     bio = serializers.CharField(read_only=True)
     image = serializers.URLField(read_only=True)
+
+
+class UserLoginResponseSerializer(CurrentUserResponseSerializer):
     token = serializers.CharField(read_only=True)
     refresh_token = serializers.CharField(read_only=True)

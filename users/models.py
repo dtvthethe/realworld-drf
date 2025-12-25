@@ -2,23 +2,42 @@ from django.db import models
 from django.db.models import Q, F
 from core.models import CoreModel
 import users.constants as constants
+from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.hashers import make_password, check_password
 
 
-class User(CoreModel):
-    username = models.CharField(max_length=constants.USERNAME_MAX_LENGTH, unique=True)
+class User(CoreModel, AbstractUser):
+    # xem: AbstractUser
+    # username = models.CharField(max_length=constants.USERNAME_MAX_LENGTH, unique=True)
+
+    # email có trong AbstractUser, override để  unique
     email = models.EmailField(max_length=constants.EMAIL_MAX_LENGTH, unique=True)
-    password = models.CharField(max_length=constants.PASSWORD_MAX_LENGTH)
+
+    # TODO: bỏ first_name và last_name từ AbstractUser
+    # first_name = models.CharField(max_length=150, blank=True, null=True)
+    # last_name = models.CharField(max_length=150, blank=True, null=True)
+
+    # xem: AbstractBaseUser
+    # password = models.CharField(max_length=constants.PASSWORD_MAX_LENGTH)
+
     bio = models.CharField(max_length=constants.BIO_MAX_LENGTH, null=True)
     image = models.CharField(max_length=constants.IMAGE_MAX_LENGTH, null=True)
 
-    # mã hóa password
-    def set_password(self, input):
-        self.password = make_password(input)
+    # dùng email để login thay vì username
+    USERNAME_FIELD = "email"
 
+    # trong AbstractUser set cột email là required, nhưng email đã là USERNAME_FIELD nên được tự động coi là required
+    REQUIRED_FIELDS = []
+
+    # xem: AbstractBaseUser
+    # mã hóa password
+    # def set_password(self, input):
+    #     self.password = make_password(input)
+
+    # xem: AbstractBaseUser
     # kiểm tra password đúng hay không
-    def check_password(self, input):
-        return check_password(input, self.password)
+    # def check_password(self, input):
+    #     return check_password(input, self.password)
 
     # ko dùng cái này thay bằng Following model bên dưới
     # user.following.all()   # mình follow ng khác

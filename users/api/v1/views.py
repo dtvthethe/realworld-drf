@@ -2,8 +2,10 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from users.models import User
 from .serializers import (
+    CurrentUserResponseSerializer,
     UserRegisterSerializer,
     ProfileResponseSerializer,
     UserLoginResponseSerializer,
@@ -72,6 +74,26 @@ class ProfileViewSet(GenericViewSet):
             response_serializer = ProfileResponseSerializer(user)
 
             return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"errors": e.detail},
+                status=HTTP_400_BAD_REQUEST,
+            )
+
+
+class CurrentUserViewSet(GenericViewSet):
+    # chỉ có thể truy cập khi có token, nếu không có cái này thì ai cũng có thể  truy cập
+    # cái này ko trực tiếp verify token mà nhờ JWTAuthentication trong settings.py
+    # Authorization: Bearer <access_token>
+    permission_classes = [IsAuthenticated]
+
+    # vì ko có pk nên phải khai báo riêng trong urls.py
+    def retrieve(self, request):
+        try:
+            user = request.user
+            response_data = CurrentUserResponseSerializer(user).data
+
+            return Response({"user": response_data}, status=HTTP_200_OK)
         except Exception as e:
             return Response(
                 {"errors": e.detail},
