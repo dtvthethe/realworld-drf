@@ -1,9 +1,15 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 from rest_framework.permissions import IsAuthenticated
+from django.http import Http404
+from core.permissions import IsOwner
 from ...models import Article
-from .serializers import CreateArticleSerializer, ResponseArticleSerializer
+from .serializers import (
+    CreateArticleSerializer,
+    ResponseArticleSerializer,
+    UpdateArticleSerializer,
+)
 from ...constants import LIST_LIMIT_DEFAULT
 
 
@@ -16,8 +22,10 @@ class ArticleViewSet(GenericViewSet):
 
     # nếu chỉ có vài action cần verify token thì override hàm này
     def get_permissions(self):
-        if self.action in ["create", "destroy"]:
+        if self.action in ["create"]:
             return [IsAuthenticated()]
+        if self.action in ["destroy", "update"]:
+            return [IsAuthenticated(), IsOwner()]
         return []
 
     def create(self, request):
@@ -47,9 +55,7 @@ class ArticleViewSet(GenericViewSet):
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
             # return Response({"article": {}}, status=HTTP_200_OK)
         except Article.DoesNotExist:
-            return Response(
-                {"error": "Article not found."}, status=HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
 
@@ -59,7 +65,7 @@ class ArticleViewSet(GenericViewSet):
             articles = self.get_queryset().all()
 
             # title
-            title = request.query_params.get("title", None).strip()
+            title = request.query_params.get("title", "").strip()
             if title:
                 articles = articles.filter(title__icontains=title)
 
@@ -73,7 +79,7 @@ class ArticleViewSet(GenericViewSet):
             # TODO: implement favorited filter
 
             # pagination
-            limit = int(request.query_params.get("limit", self.LIST_LIMIT_DEFAULT))
+            limit = int(request.query_params.get("limit", LIST_LIMIT_DEFAULT))
             offset = int(request.query_params.get("offset", 0))
             articles = articles[offset : offset + limit]
 
@@ -91,22 +97,34 @@ class ArticleViewSet(GenericViewSet):
 
     def destroy(self, request, slug=None):
         try:
-            article = self.get_queryset().get(slug=slug)
-            current_user = request.user
-
-            if article.author != current_user:
-                return Response(
-                    {"error": "You are not authorized to delete this article."},
-                    status=HTTP_400_BAD_REQUEST,
-                )
-
+            # article = self.get_queryset().get(slug=slug)
+            # Vì trong  get_object() gọi đến has_object_permission()
+            article = self.get_object()
             article.delete()
+
             return Response(
                 {"message": "Article deleted successfully."}, status=HTTP_200_OK
             )
-        except Article.DoesNotExist:
-            return Response(
-                {"error": "Article not found."}, status=HTTP_400_BAD_REQUEST
+        except Http404:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+
+    def update(self, request, slug=None):
+        try:
+            article = self.get_object()
+            article_data = request.data.get("article", {})
+            serializer = UpdateArticleSerializer(
+                article,
+                data=article_data,
+                partial=True,
             )
+            serializer.is_valid(raise_exception=True)
+            article = serializer.save()
+            response_serializer = ResponseArticleSerializer(article)
+
+            return Response({"article": response_serializer.data}, status=HTTP_200_OK)
+        except Http404:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)

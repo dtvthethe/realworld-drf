@@ -84,3 +84,49 @@ class ResponseArticleSerializer(serializers.Serializer):
 
     def get_updatedAt(self, article):
         return article.updated_at
+
+class UpdateArticleSerializer(serializers.Serializer):
+    title = serializers.CharField(
+        max_length=TITLE_MAX_LENGTH,
+        min_length=TITLE_MIN_LENGTH,
+        allow_blank=False,
+        required=True,
+    )
+    description = serializers.CharField(
+        max_length=DESCRIPTION_MAX_LENGTH,
+        min_length=DESCRIPTION_MIN_LENGTH,
+        allow_blank=False,
+        required=True,
+    )
+    body = serializers.CharField(
+        min_length=BODY_MIN_LENGTH, allow_blank=False, required=True
+    )
+    status = serializers.ChoiceField(
+        choices=STATUS_CHOICES,
+        default=STATUS_DRAFT,
+    )
+    tagList = serializers.ListField(
+        child=serializers.CharField(max_length=NAME_MAX_LENGTH),
+        allow_empty=True,
+        required=False,
+    )
+
+    def update(self, article, validated_data):
+        tags = validated_data.pop("tagList", [])
+        article.title = validated_data.get("title", article.title)
+        article.description = validated_data.get("description", article.description)
+        article.body = validated_data.get("body", article.body)
+        article.status = validated_data.get("status", article.status)
+        article.slug = slugify(article.title)
+        article.save()
+
+        if tags:
+            # xóa hết tag cũ
+            article.tags.clear()
+
+            # tạo lại tag mới
+            for tag in tags:
+                tag = Tag.objects.get_or_create(name=tag)
+                article.tags.add(tag[0])
+
+        return article
