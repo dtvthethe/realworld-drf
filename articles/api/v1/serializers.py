@@ -37,11 +37,11 @@ class CreateArticleSerializer(serializers.Serializer):
     # 2 dấu `**`: convert sang kiểu dict
     def create(self, validated_data):
         tags = validated_data.pop("tagList", [])
-        current_user = self.context["request"].user # lấy user từ context được truyền vào từ view
+        current_user = self.context[
+            "request"
+        ].user  # lấy user từ context được truyền vào từ view
         article = Article.objects.create(
-            slug=slugify(validated_data["title"]),
-            author=current_user,
-            **validated_data
+            slug=slugify(validated_data["title"]), author=current_user, **validated_data
         )
 
         for tag in tags:
@@ -52,6 +52,7 @@ class CreateArticleSerializer(serializers.Serializer):
             article.tags.add(tag[0])
 
         return article
+
 
 class ResponseArticleSerializer(serializers.Serializer):
     slug = serializers.CharField(read_only=True)
@@ -66,7 +67,17 @@ class ResponseArticleSerializer(serializers.Serializer):
     author = ProfileResponseSerializer(read_only=True)
 
     def get_favorited(self, article):
-        # TODO: implement favorited
+        req = self.context.get("request", None)
+
+        if req is None or not req.user.is_authenticated:
+            return False
+
+        user = req.user
+        favorited_user = article.favorites.filter(id=user.id)
+
+        if favorited_user.exists():
+            return True
+
         return False
 
     def get_favoritesCount(self, article):
@@ -83,6 +94,7 @@ class ResponseArticleSerializer(serializers.Serializer):
 
     def get_updatedAt(self, article):
         return article.updated_at
+
 
 class UpdateArticleSerializer(serializers.Serializer):
     title = serializers.CharField(
