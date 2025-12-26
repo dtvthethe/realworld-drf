@@ -1,6 +1,7 @@
+from django.http import Http404
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 from rest_framework.exceptions import APIException
 from rest_framework.permissions import IsAuthenticated
 from comments.api.v1.serializers import (
@@ -24,6 +25,7 @@ class CommentViewSet(GenericViewSet):
     def destroy(self, request, slug=None, pk=None):
         try:
             comment = self.get_object()  # get_object() raise Http404 nếu không tìm thấy
+            comment = self.get_object()
             comment.delete()
 
             return Response(
@@ -62,3 +64,9 @@ class CommentViewSet(GenericViewSet):
             return Response({"comment": response_serializer.data}, status=HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
+        except Http404:
+            return Response({"error": "Comment not found."}, status=HTTP_404_NOT_FOUND)
+        except Comment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
