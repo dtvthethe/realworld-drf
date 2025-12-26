@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.http import Http404
 from core.permissions import IsOwner
+from users.models import Following
 from users.api.v1.serializers import ProfileResponseSerializer
 from ...models import Article
 from .serializers import (
@@ -172,5 +173,37 @@ class ArticleViewSet(GenericViewSet):
             return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
         except Article.DoesNotExist:
             return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def feed(self, request):
+        try:
+            user = request.user
+            user_following_ids = Following.objects.filter(follower=user).values_list(
+                "followee_id", flat=True
+            )
+            articles = (
+                self.get_queryset()
+                .filter(author_id__in=list(user_following_ids))
+                .order_by("-created_at")
+            )
+
+            # pagination
+            limit = int(request.query_params.get("limit", LIST_LIMIT_DEFAULT))
+            offset = int(request.query_params.get("offset", 0))
+            articles = articles[offset : offset + limit]
+
+            response_serializer = ResponseArticleSerializer(
+                articles, many=True, context={"request": request}
+            )
+
+            return Response(
+                {
+                    "articles": response_serializer.data,
+                    "articlesCount": articles.count(),
+                },
+                status=HTTP_200_OK,
+            )
         except Exception as e:
             return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
