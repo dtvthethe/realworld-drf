@@ -74,7 +74,7 @@ class ProfileViewSet(GenericViewSet):
     def retrieve(self, request, username=None):
         try:
             user = self.get_queryset().get(username=username)
-            response_serializer = ProfileResponseSerializer(user)
+            response_serializer = ProfileResponseSerializer(user, context={"request": request})
 
             return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
         except Exception as e:
@@ -98,7 +98,7 @@ class ProfileViewSet(GenericViewSet):
                 follower=current_user,
                 followee=user_want_to_follow,
             )
-            serializer_response = ProfileResponseSerializer(user_want_to_follow)
+            serializer_response = ProfileResponseSerializer(user_want_to_follow, context={"request": request})
 
             return Response({"profile": serializer_response.data}, status=HTTP_200_OK)
         except Http404:
@@ -125,7 +125,7 @@ class ProfileViewSet(GenericViewSet):
                 follower=current_user,
                 followee=user_want_to_unfollow,
             ).delete()
-            serializer_response = ProfileResponseSerializer(user_want_to_unfollow)
+            serializer_response = ProfileResponseSerializer(user_want_to_unfollow, context={"request": request})
 
             return Response({"profile": serializer_response.data}, status=HTTP_200_OK)
         except Http404:

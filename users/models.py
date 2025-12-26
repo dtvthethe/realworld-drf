@@ -82,12 +82,15 @@ class Following(models.Model):
     ).exists()
     """
 
+    # mình
     follower = models.ForeignKey(
         User,
         related_name="following",
         on_delete=models.CASCADE,
         db_column="follower_id",
     )
+
+    # người mình follow
     followee = models.ForeignKey(
         User,
         related_name="followers",

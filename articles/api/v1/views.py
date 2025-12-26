@@ -42,7 +42,9 @@ class ArticleViewSet(GenericViewSet):
             )
             serializer.is_valid(raise_exception=True)
             article = serializer.save()
-            response_serializer = ResponseArticleSerializer(article)
+            response_serializer = ResponseArticleSerializer(
+                article, context={"request": request}
+            )
 
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
         except Exception as e:
@@ -52,7 +54,9 @@ class ArticleViewSet(GenericViewSet):
         try:
             # print("Retrieving article with slug:", slug)
             article = self.get_queryset().get(slug=slug)
-            response_serializer = ResponseArticleSerializer(article)
+            response_serializer = ResponseArticleSerializer(
+                article, context={"request": request}
+            )
 
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
             # return Response({"article": {}}, status=HTTP_200_OK)
@@ -85,7 +89,9 @@ class ArticleViewSet(GenericViewSet):
             offset = int(request.query_params.get("offset", 0))
             articles = articles[offset : offset + limit]
 
-            response_serializer = ResponseArticleSerializer(articles, many=True)
+            response_serializer = ResponseArticleSerializer(
+                articles, many=True, context={"request": request}
+            )
 
             return Response(
                 {
@@ -123,7 +129,9 @@ class ArticleViewSet(GenericViewSet):
             )
             serializer.is_valid(raise_exception=True)
             article = serializer.save()
-            response_serializer = ResponseArticleSerializer(article)
+            response_serializer = ResponseArticleSerializer(
+                article, context={"request": request}
+            )
 
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
         except Http404:
@@ -139,7 +147,9 @@ class ArticleViewSet(GenericViewSet):
             # vì UNIQUE(article_id, user_id) nên ko cần check đã favorite chưa
             article.favorites.add(user)
             article.save()
-            response_serializer = ProfileResponseSerializer(user)
+            response_serializer = ProfileResponseSerializer(
+                user, context={"request": request}
+            )
 
             return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
         except Article.DoesNotExist:
@@ -155,7 +165,9 @@ class ArticleViewSet(GenericViewSet):
             # nếu ko có key (article_id, user_id) thì ko báo cũng ko có lỗi
             article.favorites.remove(user)
             article.save()
-            response_serializer = ProfileResponseSerializer(user)
+            response_serializer = ProfileResponseSerializer(
+                user, context={"request": request}
+            )
 
             return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
         except Article.DoesNotExist:

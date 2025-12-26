@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from ...constants import *
 from ...models import User
+from users.models import Following
 
 
 class UserRegisterSerializer(serializers.Serializer):
@@ -69,8 +70,19 @@ class ProfileResponseSerializer(serializers.Serializer):
     following = serializers.SerializerMethodField()
 
     def get_following(self, author):
-        # return author
-        return False
+        req = self.context.get("request", None)
+
+        if req is None or not req.user.is_authenticated:
+            return False
+
+        current_user = req.user
+
+        is_following = Following.objects.filter(
+            follower=current_user,
+            followee=author,
+        ).exists()
+
+        return is_following
 
 
 class UserLoginSerializer(serializers.Serializer):
