@@ -77,13 +77,19 @@ class ArticleViewSet(GenericViewSet):
                 articles = articles.filter(title__icontains=title)
 
             # tag
-            # TODO: implement tag filter
+            tag = request.query_params.get("tag", "").strip()
+            if tag:
+                articles = articles.filter(tags__name__in=[tag])
 
             # author
-            # TODO: implement author filter
+            str_author = request.query_params.get("author", "").strip()
+            if str_author:
+                articles = articles.filter(author__username=str_author)
 
             # favorited
-            # TODO: implement favorited filter
+            str_favorited = request.query_params.get("favorited", "").strip()
+            if str_favorited:
+                articles = articles.filter(favorites__username=str_favorited)
 
             # pagination
             limit = int(request.query_params.get("limit", LIST_LIMIT_DEFAULT))
