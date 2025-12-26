@@ -212,8 +212,13 @@ class ArticleViewSet(GenericViewSet):
         except Exception as e:
             return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
-    def comments(self, request, slug=None):
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[IsAuthenticated],
+        url_path="comment",
+    )
+    def create_comment(self, request, slug=None):
         try:
             serializer = CreateCommentSerializer(
                 data=request.data.get("comment", {}),
@@ -226,10 +231,33 @@ class ArticleViewSet(GenericViewSet):
             comment = serializer.save()
 
             serializer_data = ResponseCommentSerializer(
-                comment, context={"request": request}
+                comment,
+                context={"request": request},
             ).data
 
             return Response({"comment": serializer_data}, status=HTTP_200_OK)
+        except Article.DoesNotExist:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="comments",
+    )
+    def list_comments(self, request, slug=None):
+        try:
+            article = self.get_object()
+            comments = article.comments.all().order_by("created_at")
+
+            serializer_data = ResponseCommentSerializer(
+                comments,
+                context={"request": request},
+                many=True,
+            ).data
+
+            return Response({"comments": serializer_data}, status=HTTP_200_OK)
         except Article.DoesNotExist:
             return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
