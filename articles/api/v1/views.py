@@ -7,6 +7,10 @@ from django.http import Http404
 from core.permissions import IsOwner
 from users.models import Following
 from users.api.v1.serializers import ProfileResponseSerializer
+from comments.api.v1.serializers import (
+    CreateCommentSerializer,
+    ResponseCommentSerializer,
+)
 from ...models import Article
 from .serializers import (
     CreateArticleSerializer,
@@ -205,5 +209,28 @@ class ArticleViewSet(GenericViewSet):
                 },
                 status=HTTP_200_OK,
             )
+        except Exception as e:
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def comments(self, request, slug=None):
+        try:
+            serializer = CreateCommentSerializer(
+                data=request.data.get("comment", {}),
+                context={
+                    "request": request,
+                    "article": self.get_object(),
+                },
+            )
+            serializer.is_valid(raise_exception=True)
+            comment = serializer.save()
+
+            serializer_data = ResponseCommentSerializer(
+                comment, context={"request": request}
+            ).data
+
+            return Response({"comment": serializer_data}, status=HTTP_200_OK)
+        except Article.DoesNotExist:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
