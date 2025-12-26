@@ -2,11 +2,12 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 from rest_framework.permissions import IsAuthenticated
+from django.http import Http404
+from articles.models import Article
 from comments.api.v1.serializers import (
     CreateCommentSerializer,
     ResponseCommentSerializer,
 )
-from django.http import Http404
 from core.permissions import IsOwner
 from comments.models import Comment
 
@@ -55,5 +56,18 @@ class CommentViewSet(GenericViewSet):
             )
 
             return Response({"comment": response_serializer.data}, status=HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
+
+    def list(self, request, slug=None):
+        try:
+            comments = Article.objects.get(slug=slug).comments.all().order_by("created_at")
+            response_serializer = ResponseCommentSerializer(
+                comments,
+                context={"request": request},
+                many=True,
+            )
+
+            return Response({"comments": response_serializer.data}, status=HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
