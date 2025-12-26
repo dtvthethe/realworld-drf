@@ -58,7 +58,7 @@ class User(CoreModel, AbstractUser):
 class Following(models.Model):
     """
     ### follow
-    Following.objects.create(
+    Following.objects.get_or_create(
         follower=request.user,
         followee=target_user
     )

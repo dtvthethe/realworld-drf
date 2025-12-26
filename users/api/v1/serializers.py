@@ -68,8 +68,8 @@ class ProfileResponseSerializer(serializers.Serializer):
     image = serializers.URLField(read_only=True)
     following = serializers.SerializerMethodField()
 
-    def get_following(self, obj):
-        # TODO: implement following logic
+    def get_following(self, author):
+        # return author
         return False
 
 
