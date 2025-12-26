@@ -4,8 +4,9 @@ from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NO
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.http import Http404
-from core.permissions import IsOwner
+from core.permissions import IsCommentOwner
 from users.models import Following
+from comments.models import Comment
 from users.api.v1.serializers import ProfileResponseSerializer
 from comments.api.v1.serializers import (
     CreateCommentSerializer,
@@ -260,5 +261,33 @@ class ArticleViewSet(GenericViewSet):
             return Response({"comments": serializer_data}, status=HTTP_200_OK)
         except Article.DoesNotExist:
             return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        permission_classes=[IsAuthenticated, IsCommentOwner],
+        url_path="comments/(?P<comment_id>[^/.]+)",  # /api/v1/articles/:slug/comments/:id
+    )
+    def delete_comment(self, request, slug=None, comment_id=None):
+        try:
+            article = self.queryset.get(slug=slug)
+            comment = article.comments.get(id=comment_id)
+
+            # gọi để check IsCommentOwner
+            # ko dùng get_object() vì nó lấy article chứ ko phải comment
+            self.check_object_permissions(request, comment)
+
+            comment.delete()
+
+            return Response(
+                {"message": "Comment deleted successfully."},
+                status=HTTP_200_OK,
+            )
+        except Article.DoesNotExist:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
+        except Comment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
