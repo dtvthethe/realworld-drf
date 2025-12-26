@@ -1,0 +1,1 @@
+BODY_MIN_LENGTH = 10
