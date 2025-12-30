@@ -1,9 +1,10 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from django.http import Http404
+from rest_framework.exceptions import APIException
+from rest_framework.permissions import AllowAny
 from users.models import Following, User
 from core.permissions import IsNotOwner
 from .serializers import (
@@ -19,6 +20,11 @@ from .serializers import (
 class UserViewSet(GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserRegisterSerializer
+
+    def get_permissions(self):
+        if self.action in ["create", "login"]:
+            return [AllowAny()]
+        return super().get_permissions()
 
     def create(self, request):
         try:
@@ -71,10 +77,19 @@ class ProfileViewSet(GenericViewSet):
     # mạc định là id, đổi sang username
     lookup_field = "username"
 
+    def get_permissions(self):
+        if self.action in ["retrieve"]:
+            return [AllowAny()]
+        if self.action in ["follow", "unfollow"]:
+            return [IsNotOwner()]
+        return super().get_permissions()
+
     def retrieve(self, request, username=None):
         try:
             user = self.get_queryset().get(username=username)
-            response_serializer = ProfileResponseSerializer(user, context={"request": request})
+            response_serializer = ProfileResponseSerializer(
+                user, context={"request": request}
+            )
 
             return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
         except Exception as e:
@@ -83,11 +98,7 @@ class ProfileViewSet(GenericViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
 
-    @action(
-        detail=True,
-        methods=["post"],
-        permission_classes=[IsAuthenticated, IsNotOwner],
-    )
+    @action(detail=True, methods=["post"])
     def follow(self, request, username=None):
         try:
             user_want_to_follow = self.get_object()  # kích hoạt hàm get_object()
@@ -98,22 +109,20 @@ class ProfileViewSet(GenericViewSet):
                 follower=current_user,
                 followee=user_want_to_follow,
             )
-            serializer_response = ProfileResponseSerializer(user_want_to_follow, context={"request": request})
-
-            return Response({"profile": serializer_response.data}, status=HTTP_200_OK)
-        except Http404:
-            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response(
-                {"errors": e.detail},
-                status=HTTP_400_BAD_REQUEST,
+            serializer_response = ProfileResponseSerializer(
+                user_want_to_follow, context={"request": request}
             )
 
-    @action(
-        detail=True,
-        methods=["delete"],
-        permission_classes=[IsAuthenticated, IsNotOwner],
-    )
+            return Response({"profile": serializer_response.data}, status=HTTP_200_OK)
+        except Exception as e:
+            if isinstance(e, APIException):
+                return Response({"error": e.detail}, status=e.status_code)
+
+            return Response(
+                {"error": "An unexpected error occurred."}, status=HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=["delete"])
     def unfollow(self, request, username=None):
         try:
             user_want_to_unfollow = self.get_object()
@@ -125,15 +134,17 @@ class ProfileViewSet(GenericViewSet):
                 follower=current_user,
                 followee=user_want_to_unfollow,
             ).delete()
-            serializer_response = ProfileResponseSerializer(user_want_to_unfollow, context={"request": request})
+            serializer_response = ProfileResponseSerializer(
+                user_want_to_unfollow, context={"request": request}
+            )
 
             return Response({"profile": serializer_response.data}, status=HTTP_200_OK)
-        except Http404:
-            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
+            if isinstance(e, APIException):
+                return Response({"error": e.detail}, status=e.status_code)
+
             return Response(
-                {"errors": e.detail},
-                status=HTTP_400_BAD_REQUEST,
+                {"error": "An unexpected error occurred."}, status=HTTP_400_BAD_REQUEST
             )
 
 

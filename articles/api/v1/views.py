@@ -1,9 +1,9 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
-from django.http import Http404
+from rest_framework.exceptions import APIException
 from core.permissions import IsOwner
 from users.models import Following
 from users.api.v1.serializers import ProfileResponseSerializer
@@ -25,11 +25,11 @@ class ArticleViewSet(GenericViewSet):
 
     # nếu chỉ có vài action cần verify token thì override hàm này
     def get_permissions(self):
-        if self.action in ["create"]:
-            return [IsAuthenticated()]
-        if self.action in ["destroy", "update"]:
-            return [IsAuthenticated(), IsOwner()]
-        return []
+        if self.action in ["retrieve", "list"]:
+            return [AllowAny()]
+        if self.action in ["update", "destroy"]:
+            return [IsOwner()]
+        return super().get_permissions()
 
     def create(self, request):
         try:
@@ -61,10 +61,13 @@ class ArticleViewSet(GenericViewSet):
 
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
             # return Response({"article": {}}, status=HTTP_200_OK)
-        except Article.DoesNotExist:
-            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+            if isinstance(e, APIException):
+                return Response({"error": e.detail}, status=e.status_code)
+
+            return Response(
+                {"error": "An unexpected error occurred."}, status=HTTP_400_BAD_REQUEST
+            )
 
     def list(self, request):
         try:
@@ -114,10 +117,13 @@ class ArticleViewSet(GenericViewSet):
             return Response(
                 {"message": "Article deleted successfully."}, status=HTTP_200_OK
             )
-        except Http404:
-            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+            if isinstance(e, APIException):
+                return Response({"error": e.detail}, status=e.status_code)
+
+            return Response(
+                {"error": "An unexpected error occurred."}, status=HTTP_400_BAD_REQUEST
+            )
 
     def update(self, request, slug=None):
         try:
@@ -135,12 +141,15 @@ class ArticleViewSet(GenericViewSet):
             )
 
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
-        except Http404:
-            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+            if isinstance(e, APIException):
+                return Response({"error": e.detail}, status=e.status_code)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+            return Response(
+                {"error": "An unexpected error occurred."}, status=HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=["post"])
     def favorite(self, request, slug=None):
         try:
             article = self.get_object()
@@ -149,7 +158,7 @@ class ArticleViewSet(GenericViewSet):
             if article.favorites.filter(id=user.id).exists():
                 return Response(
                     {"warning": "User has already favorited this article."},
-                    status=HTTP_200_OK
+                    status=HTTP_200_OK,
                 )
 
             article.favorites.add(user)
@@ -159,12 +168,15 @@ class ArticleViewSet(GenericViewSet):
             )
 
             return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
-        except Article.DoesNotExist:
-            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+            if isinstance(e, APIException):
+                return Response({"error": e.detail}, status=e.status_code)
 
-    @action(detail=True, methods=["delete"], permission_classes=[IsAuthenticated])
+            return Response(
+                {"error": "An unexpected error occurred."}, status=HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=["delete"])
     def unfavorite(self, request, slug=None):
         try:
             article = self.get_object()
@@ -186,12 +198,15 @@ class ArticleViewSet(GenericViewSet):
                 {"profile": response_serializer.data},
                 status=HTTP_200_OK,
             )
-        except Article.DoesNotExist:
-            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+            if isinstance(e, APIException):
+                return Response({"error": e.detail}, status=e.status_code)
 
-    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+            return Response(
+                {"error": "An unexpected error occurred."}, status=HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=["get"])
     def feed(self, request):
         try:
             user = request.user
