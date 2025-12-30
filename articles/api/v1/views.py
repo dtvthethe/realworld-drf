@@ -2,8 +2,10 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from django.http import Http404
 from core.permissions import IsOwner
+from users.api.v1.serializers import ProfileResponseSerializer
 from ...models import Article
 from .serializers import (
     CreateArticleSerializer,
@@ -125,6 +127,28 @@ class ArticleViewSet(GenericViewSet):
 
             return Response({"article": response_serializer.data}, status=HTTP_200_OK)
         except Http404:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def favorite(self, request, slug=None):
+        try:
+            article = self.get_object()
+            user = request.user
+
+            if article.favorites.filter(id=user.id).exists():
+                return Response(
+                    {"warning": "User has already favorited this article."},
+                    status=HTTP_200_OK
+                )
+
+            article.favorites.add(user)
+            article.save()
+            response_serializer = ProfileResponseSerializer(user)
+
+            return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
+        except Article.DoesNotExist:
             return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
