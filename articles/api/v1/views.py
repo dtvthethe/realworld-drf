@@ -152,12 +152,21 @@ class ArticleViewSet(GenericViewSet):
         try:
             article = self.get_object()
             user = request.user
-            # nếu ko có key (article_id, user_id) thì ko báo cũng ko có lỗi
+
+            if not article.favorites.filter(id=user.id).exists():
+                return Response(
+                    {"warning": "User has not favorited this article yet."},
+                    status=HTTP_200_OK,
+                )
+
             article.favorites.remove(user)
             article.save()
             response_serializer = ProfileResponseSerializer(user)
 
-            return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
+            return Response(
+                {"profile": response_serializer.data},
+                status=HTTP_200_OK,
+            )
         except Article.DoesNotExist:
             return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
