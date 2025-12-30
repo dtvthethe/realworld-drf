@@ -1,9 +1,11 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from users.models import User
+from django.http import Http404
+from users.models import Following, User
+from core.permissions import IsNotOwner
 from .serializers import (
     CurrentUserResponseSerializer,
     UserRegisterSerializer,
@@ -72,9 +74,62 @@ class ProfileViewSet(GenericViewSet):
     def retrieve(self, request, username=None):
         try:
             user = self.get_queryset().get(username=username)
-            response_serializer = ProfileResponseSerializer(user)
+            response_serializer = ProfileResponseSerializer(user, context={"request": request})
 
             return Response({"profile": response_serializer.data}, status=HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"errors": e.detail},
+                status=HTTP_400_BAD_REQUEST,
+            )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[IsAuthenticated, IsNotOwner],
+    )
+    def follow(self, request, username=None):
+        try:
+            user_want_to_follow = self.get_object()  # kích hoạt hàm get_object()
+            current_user = request.user
+
+            # follow user
+            Following.objects.get_or_create(
+                follower=current_user,
+                followee=user_want_to_follow,
+            )
+            serializer_response = ProfileResponseSerializer(user_want_to_follow, context={"request": request})
+
+            return Response({"profile": serializer_response.data}, status=HTTP_200_OK)
+        except Http404:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(
+                {"errors": e.detail},
+                status=HTTP_400_BAD_REQUEST,
+            )
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        permission_classes=[IsAuthenticated, IsNotOwner],
+    )
+    def unfollow(self, request, username=None):
+        try:
+            user_want_to_unfollow = self.get_object()
+            current_user = request.user
+
+            # unfollow user
+            # case ko ko tồn tại thì ko lỗi
+            Following.objects.filter(
+                follower=current_user,
+                followee=user_want_to_unfollow,
+            ).delete()
+            serializer_response = ProfileResponseSerializer(user_want_to_unfollow, context={"request": request})
+
+            return Response({"profile": serializer_response.data}, status=HTTP_200_OK)
+        except Http404:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(
                 {"errors": e.detail},
