@@ -152,3 +152,28 @@ class ArticleViewSet(GenericViewSet):
             return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["delete"], permission_classes=[IsAuthenticated])
+    def unfavorite(self, request, slug=None):
+        try:
+            article = self.get_object()
+            user = request.user
+
+            if not article.favorites.filter(id=user.id).exists():
+                return Response(
+                    {"warning": "User has not favorited this article yet."},
+                    status=HTTP_200_OK,
+                )
+
+            article.favorites.remove(user)
+            article.save()
+            response_serializer = ProfileResponseSerializer(user)
+
+            return Response(
+                {"profile": response_serializer.data},
+                status=HTTP_200_OK,
+            )
+        except Article.DoesNotExist:
+            return Response({"error": "Article not found."}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": e.detail}, status=HTTP_400_BAD_REQUEST)
