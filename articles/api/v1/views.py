@@ -136,7 +136,13 @@ class ArticleViewSet(GenericViewSet):
         try:
             article = self.get_object()
             user = request.user
-            # vì UNIQUE(article_id, user_id) nên ko cần check đã favorite chưa
+
+            if article.favorites.filter(id=user.id).exists():
+                return Response(
+                    {"warning": "User has already favorited this article."},
+                    status=HTTP_200_OK
+                )
+
             article.favorites.add(user)
             article.save()
             response_serializer = ProfileResponseSerializer(user)
