@@ -6,4 +6,5 @@ urlpatterns = [
     path('api/v1/', include('users.api.v1.urls')),
     path('api/v1/', include('articles.api.v1.urls')),
     path('api/v1/', include('tags.api.v1.urls')),
+    path('api/v1/', include('comments.api.v1.urls')),
 ]
