@@ -8,8 +8,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     # 🔑 Trỏ pip cài vào /app/.venv thay vì site-packages mặc định
     #    Giống vendor/ của PHP — mount ra host để VSCode đọc được!
-    VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH"
+    VIRTUAL_ENV=/venv \
+    PATH="/venv/bin:$PATH"
 
 WORKDIR /app
 

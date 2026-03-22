@@ -14,7 +14,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app                    # 🔑 sync code: sửa ngoài → tự update trong container
-      - ./.venv:/app/.venv        # 🔑 mount .venv ra host → VSCode Ctrl+Space hoạt động!
+      - ./.venv:/venv        # 🔑 mount .venv ra host → VSCode Ctrl+Space hoạt động!
     ports:
       - "8000:8000"
     env_file:
