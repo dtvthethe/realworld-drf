@@ -10,6 +10,11 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# ⭐ Set PATH để mọi shell trong container đều dùng .venv/bin/python
+# Kể cả khi `docker exec` vào tay, không cần activate .venv thủ công
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 # Copy requirements trước (tận dụng Docker layer cache)
 COPY requirements.txt .
 
