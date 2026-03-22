@@ -1,18 +1,68 @@
-version: '3.8'
+# ============================================================
+# docker-compose.yml — DEV environment
+# Chạy: docker-compose up --build
+# ============================================================
 
 services:
+
+  # ── DJANGO APP ─────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: realworld_drf_web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app                    # 🔑 sync code: sửa ngoài → tự update trong container
+      - ./.venv:/app/.venv        # 🔑 mount .venv ra host → VSCode Ctrl+Space hoạt động!
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      mysql:
+        condition: service_healthy  # chờ MySQL thật sự sẵn sàng mới start Django
+    networks:
+      - realworld_drf_network
+    restart: unless-stopped
+
+  # ── MYSQL ──────────────────────────────────────────────────
   mysql:
     image: mysql:8.0
     container_name: realworld_drf_mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}          # thêm user riêng, không dùng root
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${DB_PORT}:3306"
+      - "${DB_PORT}:3306"             # host port tùy chỉnh → container luôn là 3306
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql     # 🔑 data không mất khi tắt docker
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - realworld_drf_network
+    restart: unless-stopped
+
+  # ── PHPMYADMIN (tiện quản lý DB) ───────────────────────────
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: realworld_drf_phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql               # trỏ đến service "mysql" bên trên
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - mysql
+    networks:
+      - realworld_drf_network
+    restart: unless-stopped
 
 volumes:
   mysql_data:
