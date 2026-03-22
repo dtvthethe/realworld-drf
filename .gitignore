@@ -85,3 +85,4 @@ Thumbs.db
 
 # Custom ignores
 .github/copilot-instructions.md
+.venv/

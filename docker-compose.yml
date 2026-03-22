@@ -13,6 +13,36 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - realworld_drf_network
+    # ⭐ Healthcheck: chờ MySQL thực sự sẵn sàng
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  web:
+    build: .
+    container_name: realworld_drf_web
+    entrypoint: ["/app/docker-entrypoint.sh"]
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount toàn bộ source code
+      - .:/app
+      # ⭐ KEY: Mount .venv từ host vào container
+      # → Packages install trong container sẽ sync ra host
+      # → VSCode trên host đọc được → Ctrl+Space hoạt động!
+      - ./.venv:/app/.venv
+    env_file:
+      - .env
+    depends_on:
+      mysql:
+        # ⭐ Chờ healthcheck pass mới start web
+        condition: service_healthy
+    networks:
+      - realworld_drf_network
 
 volumes:
   mysql_data:

@@ -1,9 +1,13 @@
 ## Install
 
-copy `.env.example` to `.env` and update env variables
+copy `.env.example` to `.env` and update env variables (mysql port!)
 
 ```bash
+sudo chmod +x docker-entrypoint.sh
 docker-compose up -d
+```
+old:
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip3 install -r requirements.txt
@@ -13,6 +17,9 @@ python3 manage.py migrate
 ## Run server
 ```bash
 docker-compose up -d
+```
+old:
+```bash
 source .venv/bin/activate
 python3 manage.py runserver
 ```
